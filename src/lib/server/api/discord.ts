@@ -9,7 +9,6 @@ import type { Snowflake } from '$lib/server/models/discord/snowflake';
 import { Tracer } from '$lib/server/telemetry/tracer';
 import type { CreateThreadData } from '$lib/server/models/discord/create-thread';
 import { ThreadChannel } from '$lib/server/models/discord/thread-channel';
-import { ThreadListResponse } from '$lib/server/models/discord/thread-list-response';
 
 const SERVICE_NAME = 'api.discord';
 const logger = new Logger(SERVICE_NAME);
@@ -113,42 +112,6 @@ export class DiscordClient {
       logger.error('discord api error in deleteOriginalResponse', error, {
         'discord.error.code': code,
         'discord.error.message': message,
-      });
-      throw error;
-    });
-  }
-
-  // Thread operations for confession system
-  async listActiveThreads(channelId: Snowflake): Promise<ThreadListResponse> {
-    return await tracer.asyncSpan('list-active-threads', async span => {
-      span.setAttribute('channel.id', channelId);
-
-      const response = await fetch(
-        `${DiscordClient.#API_BASE_URL}/channels/${channelId}/threads/active`,
-        {
-          headers: {
-            Authorization: this.#botToken,
-          },
-        },
-      );
-
-      const json = await response.json();
-
-      if (response.status === 200) {
-        const parsed = parse(ThreadListResponse, json);
-        logger.debug('active threads listed', {
-          'channel.id': channelId,
-          'threads.count': parsed.threads.length,
-        });
-        return parsed;
-      }
-
-      const { code, message } = parse(DiscordErrorResponse, json);
-      const error = new DiscordError(code, message);
-      logger.error('discord api error in listActiveThreads', error, {
-        'discord.error.code': code,
-        'discord.error.message': message,
-        'discord.channel.id': channelId,
       });
       throw error;
     });
