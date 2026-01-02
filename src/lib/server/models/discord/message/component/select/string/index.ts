@@ -36,13 +36,14 @@ export type StringSelectOption = InferOutput<typeof StringSelectOption>;
 /**
  * A select menu for picking from defined text options.
  * Available in messages and modals.
+ * Modified to act as validator for *inbound* modal submissions
  */
 export const MessageComponentStringSelect = object({
   ...MessageComponentSelectBase.entries,
   /** Component type identifier. */
   type: literal(MessageComponentType.StringSelect),
-  /** The options to choose from (max 25). */
-  options: pipe(array(StringSelectOption), minLength(1), maxLength(25)),
+  custom_id: string(),
+  values: array(string())
 });
 
 export type MessageComponentStringSelect = InferOutput<typeof MessageComponentStringSelect>;
