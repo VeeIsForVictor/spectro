@@ -23,6 +23,7 @@ import type {
 } from '$lib/server/database';
 import type { Snowflake } from '$lib/server/models/discord/snowflake';
 import { UnreachableCodeError } from '$lib/assert';
+import type { CreateModalComponents } from '../models/discord/message/component/modal';
 
 export function createConfessionModal(parentMessageId: Snowflake | null): InteractionResponseModal {
   // eslint-disable-next-line @typescript-eslint/init-declarations
@@ -50,61 +51,70 @@ export function createConfessionModal(parentMessageId: Snowflake | null): Intera
     placeholder = 'What would you like to say?';
   }
 
+  const components: CreateModalComponents = [
+    {
+      type: MessageComponentType.Label,
+      label,
+      description,
+      component: {
+        custom_id: customId,
+        type: MessageComponentType.TextInput,
+        style: MessageComponentTextInputStyle.Long,
+        required: true,
+        placeholder,
+      },
+    },
+    {
+      type: MessageComponentType.Label,
+      label: 'Attachment',
+      description: 'Optional. Attach an image or file to your confession.',
+      component: {
+        custom_id: 'attachment',
+        type: MessageComponentType.FileUpload,
+        required: false,
+      },
+    },
+    {
+      type: MessageComponentType.TextDisplay,
+      content:
+        '-# For moderation purposes, server administrators can view the authors of all confessions.',
+    },
+  ]
+
+  /** If this message is not a reply, push in the destination selector component */
+
+  if (parentMessageId === null) 
+    components.push(
+        {
+        type: MessageComponentType.Label,
+        label: 'Destination',
+        description: 'Where to post the confession. Can be used to create a new thread.',
+        component: {
+          custom_id: 'destination',
+          type: MessageComponentType.StringSelect,
+          options: [
+            {
+              label: 'This channel/thread',
+              value: 'here',
+              default: true
+            },
+            {
+              label: 'New thread',
+              description: 'The name will be generated from the first 32 characters of your confession',
+              value: 'new-thread',
+            }
+          ]
+        }
+      }
+    )
+  
+
   return {
     type: InteractionResponseType.Modal,
     data: {
       custom_id: 'confess',
       title,
-      components: [
-        {
-          type: MessageComponentType.Label,
-          label,
-          description,
-          component: {
-            custom_id: customId,
-            type: MessageComponentType.TextInput,
-            style: MessageComponentTextInputStyle.Long,
-            required: true,
-            placeholder,
-          },
-        },
-        {
-          type: MessageComponentType.Label,
-          label: 'Attachment',
-          description: 'Optional. Attach an image or file to your confession.',
-          component: {
-            custom_id: 'attachment',
-            type: MessageComponentType.FileUpload,
-            required: false,
-          },
-        },
-        {
-          type: MessageComponentType.Label,
-          label: 'Destination',
-          description: 'Where to post the confession. Can be used to create a new thread.',
-          component: {
-            custom_id: 'destination',
-            type: MessageComponentType.StringSelect,
-            options: [
-              {
-                label: 'This channel/thread',
-                value: 'here',
-                default: true
-              },
-              {
-                label: 'New thread',
-                description: 'The name will be generated from the first 32 characters of your confession',
-                value: 'new-thread',
-              }
-            ]
-          }
-        },
-        {
-          type: MessageComponentType.TextDisplay,
-          content:
-            '-# For moderation purposes, server administrators can view the authors of all confessions.',
-        },
-      ],
+      components
     },
   };
 }
