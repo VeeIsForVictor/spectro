@@ -66,6 +66,7 @@ export const confession = app.table(
     authorId: bigint('author_id', { mode: 'bigint' }).notNull(),
     content: text('content').notNull(),
     attachmentId: bigint('attachment_id', { mode: 'bigint' }).references(() => attachment.id),
+    targetThreadId: bigint('target_thread_id', { mode: 'bigint' }).references(() => channel.id),
   },
   ({ confessionId, channelId, attachmentId }) => [
     uniqueIndex('confession_to_channel_unique_idx').on(confessionId, channelId),
@@ -79,4 +80,5 @@ export type NewConfession = typeof confession.$inferInsert;
 export const confessionRelations = relations(confession, ({ one }) => ({
   channel: one(channel, { fields: [confession.channelId], references: [channel.id] }),
   attachment: one(attachment, { fields: [confession.attachmentId], references: [attachment.id] }),
+  targetThread: one(channel, { fields: [confession.targetThreadId], references: [channel.id] }),
 }));

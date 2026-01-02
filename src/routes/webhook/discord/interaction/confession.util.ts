@@ -185,6 +185,7 @@ export async function submitConfession(
               isApprovalRequired ? null : timestamp, // approvedAt
               parentMessageId === null ? null : BigInt(parentMessageId),
               attachment,
+              null, // targetThreadId (will be set later during thread creation)
             ),
         ),
     );

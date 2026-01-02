@@ -65,6 +65,7 @@ const CONFESSION_CONTENT = sql.raw(schema.confession.content.name);
 const CONFESSION_APPROVED_AT = sql.raw(schema.confession.approvedAt.name);
 const CONFESSION_PARENT_MESSAGE_ID = sql.raw(schema.confession.parentMessageId.name);
 const CONFESSION_ATTACHMENT_ID = sql.raw(schema.confession.attachmentId.name);
+const CONFESSION_TARGET_THREAD_ID = sql.raw(schema.confession.targetThreadId.name);
 
 const GUILD_LAST_CONFESSION_ID = sql.raw(schema.guild.lastConfessionId.name);
 
@@ -115,6 +116,7 @@ export async function insertConfession(
   approvedAt: Date | null,
   parentMessageId: bigint | null,
   attachment: InsertableAttachment | null,
+  targetThreadId: bigint | null,
 ) {
   return await tracer.asyncSpan('insert-confession', async span => {
     span.setAttributes({
@@ -133,7 +135,7 @@ export async function insertConfession(
     const {
       rows: [result, ...otherResults],
     } = await db.execute(
-      sql`WITH _guild AS ${guild} INSERT INTO ${schema.confession} (${CONFESSION_CREATED_AT}, ${CONFESSION_CHANNEL_ID}, ${CONFESSION_AUTHOR_ID}, ${CONFESSION_CONFESSION_ID}, ${CONFESSION_CONTENT}, ${CONFESSION_APPROVED_AT}, ${CONFESSION_PARENT_MESSAGE_ID}, ${CONFESSION_ATTACHMENT_ID}) SELECT ${timestamp}, ${channelId}, ${authorId}, _guild.${GUILD_LAST_CONFESSION_ID}, ${description}, ${approvedAt}, ${parentMessageId}, ${attachmentId} FROM _guild RETURNING ${schema.confession.internalId} _internal_id, ${schema.confession.confessionId} _confession_id`,
+      sql`WITH _guild AS ${guild} INSERT INTO ${schema.confession} (${CONFESSION_CREATED_AT}, ${CONFESSION_CHANNEL_ID}, ${CONFESSION_AUTHOR_ID}, ${CONFESSION_CONFESSION_ID}, ${CONFESSION_CONTENT}, ${CONFESSION_APPROVED_AT}, ${CONFESSION_PARENT_MESSAGE_ID}, ${CONFESSION_ATTACHMENT_ID}, ${CONFESSION_TARGET_THREAD_ID}) SELECT ${timestamp}, ${channelId}, ${authorId}, _guild.${GUILD_LAST_CONFESSION_ID}, ${description}, ${approvedAt}, ${parentMessageId}, ${attachmentId}, ${targetThreadId} FROM _guild RETURNING ${schema.confession.internalId} _internal_id, ${schema.confession.confessionId} _confession_id`,
     );
 
     strictEqual(otherResults.length, 0);
@@ -232,6 +234,7 @@ export interface SerializedConfessionForDispatch {
   createdAt: string;
   approvedAt: string | null;
   parentMessageId: string | null;
+  targetThreadId: string | null;
   channel: {
     label: string;
     color: string | null;
@@ -265,6 +268,7 @@ export interface SerializedConfessionForResend {
   createdAt: string;
   approvedAt: string | null;
   parentMessageId: string | null;
+  targetThreadId: string | null;
   channel: {
     label: string;
     color: string | null;
@@ -290,6 +294,7 @@ export async function fetchConfessionForDispatch(db: Interface, confessionIntern
         createdAt: schema.confession.createdAt,
         approvedAt: schema.confession.approvedAt,
         parentMessageId: schema.confession.parentMessageId,
+        targetThreadId: schema.confession.targetThreadId,
         channelLabel: schema.channel.label,
         channelColor: schema.channel.color,
         attachmentId: schema.attachment.id,
@@ -335,6 +340,7 @@ export async function fetchConfessionForDispatch(db: Interface, confessionIntern
       createdAt: result.createdAt.toISOString(),
       approvedAt: result.approvedAt?.toISOString() ?? null,
       parentMessageId: result.parentMessageId?.toString() ?? null,
+      targetThreadId: result.targetThreadId?.toString() ?? null,
       channel: {
         label: result.channelLabel,
         color: result.channelColor,
@@ -429,6 +435,7 @@ export async function fetchConfessionForResend(db: Interface, confessionInternal
         createdAt: schema.confession.createdAt,
         approvedAt: schema.confession.approvedAt,
         parentMessageId: schema.confession.parentMessageId,
+        targetThreadId: schema.confession.targetThreadId,
         channelLabel: schema.channel.label,
         channelColor: schema.channel.color,
         channelLogChannelId: schema.channel.logChannelId,
@@ -476,6 +483,7 @@ export async function fetchConfessionForResend(db: Interface, confessionInternal
       createdAt: result.createdAt.toISOString(),
       approvedAt: result.approvedAt?.toISOString() ?? null,
       parentMessageId: result.parentMessageId?.toString() ?? null,
+      targetThreadId: result.targetThreadId?.toString() ?? null,
       channel: {
         label: result.channelLabel,
         color: result.channelColor,
