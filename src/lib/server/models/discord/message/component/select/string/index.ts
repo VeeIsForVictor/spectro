@@ -46,3 +46,9 @@ export const MessageComponentStringSelect = object({
 });
 
 export type MessageComponentStringSelect = InferOutput<typeof MessageComponentStringSelect>;
+
+export interface CreateMessageComponentStringSelect {
+  type: MessageComponentType.StringSelect,
+  custom_id: string,
+  options: StringSelectOption[]
+}

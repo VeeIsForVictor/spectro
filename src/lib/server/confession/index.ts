@@ -79,6 +79,27 @@ export function createConfessionModal(parentMessageId: Snowflake | null): Intera
           },
         },
         {
+          type: MessageComponentType.Label,
+          label: 'Destination',
+          description: 'Where to post the confession. Can be used to create a new thread.',
+          component: {
+            custom_id: 'destination',
+            type: MessageComponentType.StringSelect,
+            options: [
+              {
+                label: 'This channel/thread',
+                value: 'here',
+                default: true
+              },
+              {
+                label: 'New thread',
+                description: 'The name will be generated from the first 32 characters of your confession',
+                value: 'new-thread',
+              }
+            ]
+          }
+        },
+        {
           type: MessageComponentType.TextDisplay,
           content:
             '-# For moderation purposes, server administrators can view the authors of all confessions.',

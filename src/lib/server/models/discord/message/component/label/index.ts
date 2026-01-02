@@ -16,6 +16,7 @@ import {
   type CreateMessageComponentTextInput,
   MessageComponentTextInput,
 } from '$lib/server/models/discord/message/component/text-input';
+import type { CreateMessageComponentStringSelect } from '$lib/server/models/discord/message/component/select/string';
 
 /**
  * Inbound Valibot variant for child components that can be wrapped by a Label.
@@ -39,7 +40,8 @@ export type LabelChildComponent = InferOutput<typeof LabelChildComponent>;
  */
 export type CreateLabelChildComponent =
   | CreateMessageComponentTextInput
-  | CreateMessageComponentFileUpload;
+  | CreateMessageComponentFileUpload
+  | CreateMessageComponentStringSelect;
 
 /**
  * Inbound schema for Label component from modal submissions.
