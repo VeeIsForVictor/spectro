@@ -1,0 +1,2 @@
+ALTER TABLE "app"."confession" ADD COLUMN "target_thread_id" bigint;--> statement-breakpoint
+ALTER TABLE "app"."confession" ADD CONSTRAINT "confession_target_thread_id_channel_id_fk" FOREIGN KEY ("target_thread_id") REFERENCES "app"."channel"("id") ON DELETE no action ON UPDATE no action;
