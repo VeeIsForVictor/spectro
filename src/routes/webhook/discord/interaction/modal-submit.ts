@@ -29,7 +29,7 @@ export async function handleModalSubmit(
   channelId: Snowflake,
   authorId: Snowflake,
   permissions: bigint,
-  [contentLabel, attachmentLabel, disclaimerDisplay, ...otherComponents]: ModalComponents,
+  [contentLabel, attachmentLabel, disclaimerDisplay, destinationLabel, ...otherComponents]: ModalComponents,
   resolved: Resolved | undefined,
 ): Promise<InteractionResponse> {
   return await tracer.asyncSpan('handle-confess-submit', async span => {
@@ -82,6 +82,12 @@ export async function handleModalSubmit(
         proxy_url: attachmentData.proxy_url,
       };
     }
+    assert(typeof destinationLabel !== 'undefined');
+    strictEqual(destinationLabel.type, MessageComponentType.Label);
+
+    const { component: destinationComponent } = destinationLabel;
+    strictEqual(destinationComponent.type, MessageComponentType.StringSelect);
+    strictEqual(destinationComponent.custom_id, 'destination');
 
     try {
       await submitConfession(
