@@ -150,6 +150,9 @@ export async function submitConfession(
       });
 
       if (typeof result === 'undefined') logger.warn('confession channel not found');
+      // TODO: if channel not found, perform fallback and check if it is a public thread; 
+      // if it is, check if its parent is a registered channnel
+
       else
         logger.debug('channel found', {
           'guild.id': result.guildId.toString(),
