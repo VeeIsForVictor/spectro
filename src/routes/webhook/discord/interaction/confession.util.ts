@@ -115,7 +115,7 @@ export async function submitConfession(
   description: string,
   attachment: InsertableAttachment | null,
   parentMessageId: Snowflake | null,
-  channel: Channel
+  confessionChannel: Channel
 ) {
   return await tracer.asyncSpan('submit-confession', async span => {
     span.setAttributes({ 'channel.id': confessionChannelId, 'author.id': authorId });
