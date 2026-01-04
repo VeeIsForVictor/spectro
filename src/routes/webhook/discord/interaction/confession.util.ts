@@ -10,6 +10,7 @@ import { Tracer } from '$lib/server/telemetry/tracer';
 
 import { hasAllPermissions } from './util';
 import assert from 'node:assert/strict';
+import { channel } from '$lib/server/database/models';
 
 const SERVICE_NAME = 'webhook.interaction.confession';
 const logger = new Logger(SERVICE_NAME);
@@ -136,21 +137,10 @@ export async function submitConfession(
     if (attachment !== null && !hasAllPermissions(permission, ATTACH_FILES))
       InsufficientPermissionsConfessionError.throwNew(permission);
 
-    const channel = await tracer.asyncSpan('find-by-confession-channel-id', async span => {
-      // check if channel is a public thread, use channel.parent_id as check-against if so
-
-      let channelIdToCheck = confessionChannelId;
-
+    const targetChannel = await tracer.asyncSpan('find-by-confession-channel-id', async span => {
       span.setAttribute('channel.id', confessionChannelId);
 
-      if (confessionChannel.type === ChannelType.PublicThread) {
-        logger.warn('handling confession to a public thread');
-        assert(typeof confessionChannel.parent_id !== 'undefined');
-        span.setAttribute('channel.parent_id', confessionChannel.parent_id);
-        channelIdToCheck = confessionChannel.parent_id;
-      }
-
-      const result = await db.query.channel.findFirst({
+      let result = await db.query.channel.findFirst({
         columns: {
           logChannelId: true,
           guildId: true,
@@ -159,27 +149,54 @@ export async function submitConfession(
           label: true,
         },
         where({ id }, { eq }) {
-          return eq(id, BigInt(channelIdToCheck));
+          return eq(id, BigInt(confessionChannelId));
         },
       });
 
-      if (typeof result === 'undefined') logger.warn('confession channel not found');
-      // TODO: if channel not found, perform fallback and check if it is a public thread; 
-      // if it is, check if its parent is a registered channnel
+      if (typeof result === 'undefined') {
+        logger.warn('confession channel not found');
+        // if the channel search fails, check again if confession channel is a public thread, 
+        // upsert the public thread as a new registered channel with the same meta as its parent
+        if (confessionChannel.type === ChannelType.PublicThread) {
+          assert(typeof confessionChannel.parent_id !== 'undefined');
+          result = await db.query.channel.findFirst({
+            where({ id }, { eq }) {
+              return eq(id, BigInt(confessionChannel.parent_id ?? confessionChannelId));
+            },
+          });
 
-      else
+          // break out if this also fails
+          if (typeof result === 'undefined') return result;
+
+          assert(typeof confessionChannel.name !== 'undefined');
+          // eslint-disable-next-line no-useless-assignment
+          let rest = [];
+          [result, ...rest] = await db
+            .insert(channel)
+            .values({
+              ...result,
+              id: BigInt(confessionChannelId),
+              label: `${result.label} (Thread '${confessionChannel.name}')`
+            })
+            .onConflictDoNothing()
+            .returning()
+          assert(rest.length === 0);
+        }
+      }
+      else {
         logger.debug('channel found', {
           'guild.id': result.guildId.toString(),
           label: result.label,
           'approval.required': result.isApprovalRequired,
         });
-
+      }
+      
       return result;
     });
 
-    if (typeof channel === 'undefined') UnknownChannelConfessError.throwNew();
+    if (typeof targetChannel === 'undefined') UnknownChannelConfessError.throwNew();
 
-    const { logChannelId, guildId, disabledAt, isApprovalRequired } = channel;
+    const { logChannelId, guildId, disabledAt, isApprovalRequired } = targetChannel;
 
     if (disabledAt !== null && disabledAt <= timestamp)
       DisabledChannelConfessError.throwNew(disabledAt);
