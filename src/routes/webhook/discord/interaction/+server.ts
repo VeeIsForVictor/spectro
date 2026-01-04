@@ -157,6 +157,7 @@ async function handleInteraction(
           assert(typeof interaction.channel_id !== 'undefined');
           assert(typeof interaction.member?.user !== 'undefined');
           assert(typeof interaction.member.permissions !== 'undefined');
+          assert(typeof interaction.channel !== 'undefined');
           return await handleModalSubmit(
             timestamp,
             interaction.application_id,
@@ -167,6 +168,7 @@ async function handleInteraction(
             interaction.member.permissions,
             interaction.data.components,
             interaction.data.resolved,
+            interaction.channel
           );
         default:
           return UnexpectedModalSubmitError.throwNew(interaction.data.custom_id);

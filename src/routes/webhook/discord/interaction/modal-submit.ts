@@ -17,6 +17,7 @@ import {
   InsufficientPermissionsConfessionError,
 } from './confession.util';
 import { hasAllPermissions } from './util';
+import type { Channel } from '$lib/server/models/discord/channel';
 
 const SERVICE_NAME = 'webhook.interaction.confess-submit';
 const tracer = new Tracer(SERVICE_NAME);
@@ -31,6 +32,7 @@ export async function handleModalSubmit(
   permissions: bigint,
   [contentLabel, attachmentLabel, disclaimerDisplay, destinationLabel, ...otherComponents]: ModalComponents,
   resolved: Resolved | undefined,
+  channel: Channel,
 ): Promise<InteractionResponse> {
   return await tracer.asyncSpan('handle-confess-submit', async span => {
     span.setAttributes({ 'channel.id': channelId, 'author.id': authorId });
@@ -101,6 +103,7 @@ export async function handleModalSubmit(
         contentComponent.value,
         attachment,
         parentMessageId,
+        channel
       );
     } catch (error) {
       if (error instanceof ConfessError)

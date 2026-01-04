@@ -5,6 +5,7 @@ import { type InsertableAttachment, db, insertConfession } from '$lib/server/dat
 import { inngest } from '$lib/server/inngest/client';
 import { Logger } from '$lib/server/telemetry/logger';
 import type { Snowflake } from '$lib/server/models/discord/snowflake';
+import type { Channel } from '$lib/server/models/discord/channel';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
 import { hasAllPermissions } from './util';
@@ -114,6 +115,7 @@ export async function submitConfession(
   description: string,
   attachment: InsertableAttachment | null,
   parentMessageId: Snowflake | null,
+  channel: Channel
 ) {
   return await tracer.asyncSpan('submit-confession', async span => {
     span.setAttributes({ 'channel.id': confessionChannelId, 'author.id': authorId });
