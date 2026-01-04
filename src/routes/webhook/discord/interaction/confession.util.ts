@@ -5,10 +5,11 @@ import { type InsertableAttachment, db, insertConfession } from '$lib/server/dat
 import { inngest } from '$lib/server/inngest/client';
 import { Logger } from '$lib/server/telemetry/logger';
 import type { Snowflake } from '$lib/server/models/discord/snowflake';
-import type { Channel } from '$lib/server/models/discord/channel';
+import { ChannelType, type Channel } from '$lib/server/models/discord/channel';
 import { Tracer } from '$lib/server/telemetry/tracer';
 
 import { hasAllPermissions } from './util';
+import assert from 'node:assert/strict';
 
 const SERVICE_NAME = 'webhook.interaction.confession';
 const logger = new Logger(SERVICE_NAME);
@@ -136,7 +137,18 @@ export async function submitConfession(
       InsufficientPermissionsConfessionError.throwNew(permission);
 
     const channel = await tracer.asyncSpan('find-by-confession-channel-id', async span => {
+      // check if channel is a public thread, use channel.parent_id as check-against if so
+
+      let channelIdToCheck = confessionChannelId;
+
       span.setAttribute('channel.id', confessionChannelId);
+
+      if (confessionChannel.type === ChannelType.PublicThread) {
+        logger.warn('handling confession to a public thread');
+        assert(typeof confessionChannel.parent_id !== 'undefined');
+        span.setAttribute('channel.parent_id', confessionChannel.parent_id);
+        channelIdToCheck = confessionChannel.parent_id;
+      }
 
       const result = await db.query.channel.findFirst({
         columns: {
@@ -147,7 +159,7 @@ export async function submitConfession(
           label: true,
         },
         where({ id }, { eq }) {
-          return eq(id, BigInt(confessionChannelId));
+          return eq(id, BigInt(channelIdToCheck));
         },
       });
 
