@@ -1,4 +1,4 @@
-import { type InferOutput, object, picklist } from 'valibot';
+import { type InferOutput, object, optional, picklist } from 'valibot';
 import { Snowflake } from '$lib/server/models/discord/snowflake';
 
 /** @see https://discord.com/developers/docs/resources/channel#channel-object-channel-types */
@@ -36,6 +36,7 @@ export const Channel = object({
     ChannelType.GuildForum,
     ChannelType.GuildMedia,
   ]),
+  parent_id: optional(Snowflake)
 });
 
 export type Channel = InferOutput<typeof Channel>;
